@@ -10,7 +10,7 @@ from src.detection.yolo_detector import YoloDetector
 
 # 添加项目根目录到系统路径
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-from src.utils import load_config
+from src.utils import load_config, parse_kafka_message, save_detected_frame
 
 
 class FlinkProcessor:
@@ -32,7 +32,7 @@ class FlinkProcessor:
             self.consumer.subscribe([self.kafka_config["video_topic"]])
 
             # 初始化YOLO检测器
-            self.detector = YoloDetector()  # 您需要实现这个类
+            self.detector = YoloDetector()
 
             print("Flink处理器初始化完成")
 
@@ -46,27 +46,31 @@ class FlinkProcessor:
         try:
             while True:
                 msg = self.consumer.poll(1.0)
-                print("msg---->", msg)
                 if msg is None:
                     continue
                 if msg.error():
                     print(f"消费者错误: {msg.error()}")
                     continue
 
-                # 解析消息
                 try:
-                    data = json.loads(msg.value().decode('utf-8'))
-                    frame_data = np.frombuffer(bytes.fromhex(data['frame']), dtype=np.uint8)
-                    frame = cv2.imdecode(frame_data, cv2.IMREAD_COLOR)
+                    # 使用utils中的parse_kafka_message函数解析消息
+                    data = parse_kafka_message(msg.value().decode('utf-8'))
+
+                    # 获取解析后的数据
+                    frame = data['frame']
+                    camera_id = data['camera_id']
+                    timestamp = data['timestamp']
 
                     # 进行目标检测
-                    results = self.detector.predict(frame)
+                    results = self.detector.model.predict(frame)
 
                     # 处理检测结果
-                    self.process_results(data['camera_id'], results)
+                    self.process_results(camera_id, results, frame, timestamp)
 
                 except Exception as e:
                     print(f"处理帧时出错: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
                     continue
 
         except KeyboardInterrupt:
@@ -74,11 +78,17 @@ class FlinkProcessor:
         finally:
             self.consumer.close()
 
-    def process_results(self, camera_id, results):
+    def process_results(self, camera_id, results, frame, timestamp):
         """处理检测结果"""
         # 实现检测结果的处理逻辑
-        # 例如：保存到数据库、触发告警等
-        pass
+        # 如果需要保存检测到的帧
+        if self.config["storage"]["save_frames"]:
+            save_detected_frame(
+                frame=frame,
+                results=results,
+                output_path=self.config["storage"]["output_dir"],
+                camera_id=camera_id
+            )
 
 
 def main():

@@ -53,7 +53,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 mlruns/
-
+# detected file
+data/alerts/*
+data/detected/*
 # Translations
 *.mo
 *.pot

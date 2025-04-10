@@ -82,6 +82,7 @@ class CameraSimulator:
                 self.camera_config["id"],
                 frame
             )
+            print("准备发送的消息:", message[:100] + "...")  # 只打印前100个字符避免刷屏
             
             # 发送到Kafka
             self.producer.produce(
