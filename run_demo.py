@@ -117,7 +117,7 @@ def main():
             processes,
             "摄像头模拟器"
         )
-        time.sleep(2)  # 等待摄像头模拟器启动
+        time.sleep(5)  # 增加等待时间，确保摄像头完全初始化
 
         # 启动Flink处理器
         flink_process = start_component(
@@ -125,7 +125,7 @@ def main():
             processes,
             "Flink处理器"
         )
-        time.sleep(2)  # 等待Flink处理器启动
+        time.sleep(3)  # 等待Flink处理器启动
 
         # 启动告警服务
         alert_process = start_component(
