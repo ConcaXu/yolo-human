@@ -71,4 +71,18 @@ python src/alert/service.py
 
 修改`.env`文件中的`VIDEO_SOURCE`参数：
 - 使用摄像头：设置为摄像头索引，通常为`0`（默认摄像头）
-- 使用视频文件：设置为视频文件路径，例如`./data/sample.mp4` 
+- 使用视频文件：设置为视频文件路径，例如`./data/sample.mp4`
+
+## Zk,Kf报错总结记录
+~~~text
+报错日志:
+D:\bigData\kafka\logs. (kafka.server.ReplicaManager)
+[2025-04-10 23:26:38,704] WARN Stopping serving logs in dir D:\bigData\kafka\logs (kafka.log.LogManager)
+[2025-04-10 23:26:38,706] ERROR Shutdown broker because all log dirs in D:\bigData\kafka\logs have failed (kafka.log.LogManager)
+
+报错原因：
+Kf意外退出 Topics 与 Zk不对应
+
+解决办法：
+需要删除 kf logs 以及zk中的data 和logs
+~~~
