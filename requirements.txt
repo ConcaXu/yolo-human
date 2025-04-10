@@ -1,0 +1,8 @@
+opencv-python
+numpy
+kafka-python
+pyflink
+ultralytics
+pillow
+python-dotenv
+confluent-kafka
