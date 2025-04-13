@@ -13,26 +13,53 @@ load_dotenv()
 
 def load_config():
     """加载配置"""
+    # 尝试从config.json文件加载配置
+    config_path = os.path.join(os.path.dirname(__file__), "config.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            
+            # 补充从环境变量读取kafka配置（如果config中没有）
+            if "kafka" not in config:
+                config["kafka"] = {
+                    "bootstrap_servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+                    "video_topic": os.getenv("KAFKA_VIDEO_TOPIC", "video_frames"),
+                    "alert_topic": os.getenv("KAFKA_ALERT_TOPIC", "human_alerts")
+                }
+            
+            # 补充从环境变量读取YOLO配置（如果config中没有）
+            if "yolo" not in config:
+                config["yolo"] = {
+                    "model_path": os.getenv("YOLO_MODEL_PATH", "models/yolov8n.pt"),
+                    "confidence": float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
+                }
+            
+            # 补充从环境变量读取存储配置（如果config中没有）
+            if "storage" not in config:
+                config["storage"] = {
+                    "save_frames": os.getenv("SAVE_DETECTED_FRAMES", "true").lower() == "true",
+                    "output_dir": os.getenv("OUTPUT_DIR", "data/detected")
+                }
+            
+            return config
+        except Exception as e:
+            print(f"读取配置文件失败: {e}，将使用环境变量")
+    
+    # 如果无法从文件加载，则从环境变量加载
     return {
         "kafka": {
-            "bootstrap_servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS"),
-            "video_topic": os.getenv("KAFKA_VIDEO_TOPIC"),
-            "alert_topic": os.getenv("KAFKA_ALERT_TOPIC")
-        },
-        "camera": {
-            "id": os.getenv("CAMERA_ID"),
-            "video_source": os.getenv("VIDEO_SOURCE"),
-            "frame_width": int(os.getenv("FRAME_WIDTH")),
-            "frame_height": int(os.getenv("FRAME_HEIGHT")),
-            "fps": int(os.getenv("FPS"))
+            "bootstrap_servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+            "video_topic": os.getenv("KAFKA_VIDEO_TOPIC", "video_frames"),
+            "alert_topic": os.getenv("KAFKA_ALERT_TOPIC", "human_alerts")
         },
         "yolo": {
-            "model_path": os.getenv("YOLO_MODEL_PATH"),
-            "confidence": float(os.getenv("CONFIDENCE_THRESHOLD"))
+            "model_path": os.getenv("YOLO_MODEL_PATH", "models/yolov8n.pt"),
+            "confidence": float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
         },
         "storage": {
-            "save_frames": os.getenv("SAVE_DETECTED_FRAMES").lower() == "true",
-            "output_dir": os.getenv("OUTPUT_DIR")
+            "save_frames": os.getenv("SAVE_DETECTED_FRAMES", "true").lower() == "true",
+            "output_dir": os.getenv("OUTPUT_DIR", "data/detected")
         }
     }
 

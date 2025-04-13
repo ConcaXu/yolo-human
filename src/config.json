@@ -1,0 +1,34 @@
+{
+  "kafka": {
+    "bootstrap_servers": "127.0.0.1:9092",
+    "video_topic": "video_frames",
+    "alert_topic": "human_alerts"
+  },
+  "cameras": [
+    {
+      "id": "cam001",
+      "video_source": "0",
+      "frame_width": 640,
+      "frame_height": 480,
+      "fps": 10
+    },
+    {
+      "id": "cam002",
+      "video_source": "data/videos/sample1.mp4",
+      "frame_width": 640,
+      "frame_height": 480,
+      "fps": 15
+    }
+  ],
+  "yolo": {
+    "model_path": "models/yolov8n.pt",
+    "confidence": 0.5
+  },
+  "storage": {
+    "save_frames": true,
+    "output_dir": "data/detected"
+  },
+  "processor": {
+    "num_threads": 4
+  }
+}
