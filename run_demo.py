@@ -12,6 +12,7 @@ def print_banner():
     ===========================================================
       实时视频监控与人员检测系统 (多摄像头版)
       摄像头 → 视频流 → Kafka → Flink+Yolo实时检测 → 告警/存储
+      桌面可视化界面
     ===========================================================
     """
     print(banner)
@@ -113,9 +114,48 @@ def load_config():
         return None
 
 
+def run_gui():
+    """直接运行GUI界面"""
+    try:
+        # 使用subprocess直接启动GUI（使用direct_run.py）
+        print("正在启动GUI界面（独立进程）...")
+        
+        # 使用direct_run.py启动GUI，它会正确设置路径和工作目录
+        gui_process = subprocess.Popen(
+            [sys.executable, os.path.join("src", "gui", "direct_run.py")],
+            # 不捕获输出，让GUI直接使用标准输出
+            stdout=None,
+            stderr=None,
+            # 使用当前的环境变量
+            env=os.environ.copy(),
+            # 确保在项目根目录运行
+            cwd=os.path.abspath(os.path.dirname(__file__))
+        )
+        
+        print(f"GUI进程已启动，PID: {gui_process.pid}")
+        return gui_process
+    except Exception as e:
+        print(f"启动GUI界面时出错: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def main():
     """主函数"""
     print_banner()
+
+    # 检查命令行参数
+    if len(sys.argv) > 1 and sys.argv[1] == "--gui-only":
+        # 只运行GUI部分
+        gui_process = run_gui()
+        if gui_process:
+            try:
+                gui_process.wait()  # 等待GUI进程结束
+            except KeyboardInterrupt:
+                gui_process.terminate()
+                print("GUI已终止")
+        return
 
     # 检查Kafka状态
     if not check_kafka():
@@ -161,10 +201,20 @@ def main():
             "src/alert/service.py",
             processes,
             "告警服务",
-            wait_time=2
+            wait_time=3  # 确保告警服务完全启动
         )
-
-        print("\n所有组件已启动！按 Ctrl+C 停止系统。\n")
+        
+        # 等待一段时间，让服务先生成一些数据
+        print("等待服务初始化完成...")
+        time.sleep(2)
+        
+        # 直接启动GUI界面（独立进程）
+        gui_process = run_gui()
+        if gui_process:
+            processes.append((gui_process, "GUI界面"))
+        
+        print("\n所有组件已启动！")
+        print("按 Ctrl+C 停止系统。\n")
 
         # 等待用户中断
         while all(p[0].poll() is None for p in processes):
